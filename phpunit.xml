@@ -9,28 +9,40 @@
          processIsolation="false"
          stopOnFailure="false">
     <testsuites>
-        <testsuite name="Portainers Tests">
-            <directory>./app/Containers/</directory>
+        <testsuite name="Containers Tests">
+            <directory suffix="Test.php">./app/Containers</directory>
         </testsuite>
     </testsuites>
     <filter>
         <whitelist processUncoveredFilesFromWhitelist="true">
             <directory suffix=".php">./app</directory>
+            <exclude>
+                <!-- 
+                NOTE: Exclude the following directories because they fail when directly included with code-coverage
+                -->
+                <directory suffix=".php">./app/Containers/*/UI/*/Routes</directory>
+                <directory suffix=".php">./app/Containers/*/Data/Factories</directory>
+
+                <!-- 
+                NOTE: Excluded this file because it fails when directly included with code-coverage.
+                -->
+                <file>./app/Ship/Engine/Loaders/FactoryMixer/FactoriesLoader.php</file>
+            </exclude>
         </whitelist>
     </filter>
     <php>
-        <env name="APP_ENV" value="testing"/>
-        <env name="API_FULL_URL" value="http://api.hello.dev"/>
+        <env name="API_FULL_URL"        value="http://api.apiato.dev"/>
 
-        <env name="CACHE_DRIVER" value="array"/>
-        <env name="SESSION_DRIVER" value="array"/>
-        <env name="QUEUE_DRIVER" value="sync"/>
+        <env name="APP_ENV"             value="testing"/>
+        <env name="CACHE_DRIVER"        value="array"/>
+        <env name="SESSION_DRIVER"      value="array"/>
+        <env name="QUEUE_DRIVER"        value="sync"/>
 
-        <env name="DB_CONNECTION" value="testing_sqlite_in_memory"/>
-        <env name="TESTING_DB_HOST" value="192.168.99.100"/>
-        <env name="TESTING_DB_PORT" value="3307"/>
-        <env name="TESTING_DB_NAME" value="helloapi"/>
-        <env name="TESTING_DB_USERNAME" value="helloapi"/>
-        <env name="TESTING_DB_PASSWORD" value="helloapi"/>
+        <env name="DB_CONNECTION"       value="testing_sqlite_in_memory"/>
+        <env name="DB_HOST"             value="127.0.0.1"/>
+        <env name="DB_PORT"             value="3306"/>
+        <env name="DB_NAME"             value="homestead"/>
+        <env name="DB_USERNAME"         value="homestead"/>
+        <env name="DB_PASSWORD"         value="secret"/>
     </php>
 </phpunit>

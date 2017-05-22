@@ -2,8 +2,10 @@
 
 namespace App\Containers\User\Actions;
 
-use App\Containers\User\Services\UpdateUserService;
-use App\Port\Action\Abstracts\Action;
+use App\Containers\User\Tasks\UpdateUserTask;
+use App\Ship\Parents\Actions\Action;
+use App\Ship\Parents\Requests\Request;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * Class UpdateUserAction.
@@ -14,32 +16,27 @@ class UpdateUserAction extends Action
 {
 
     /**
-     * @var  \App\Containers\User\Services\UpdateUserService
-     */
-    private $updateUserService;
-
-    /**
-     * UpdateUserAction constructor.
-     *
-     * @param \App\Containers\User\Services\UpdateUserService $updateUserService
-     */
-    public function __construct(UpdateUserService $updateUserService)
-    {
-        $this->updateUserService = $updateUserService;
-    }
-
-    /**
-     * @param      $userId
-     * @param null $password
-     * @param null $name
-     * @param null $email
+     * @param \App\Ship\Parents\Requests\Request $request
      *
      * @return  mixed
      */
-    public function run($userId, $password = null, $name = null, $email = null)
+    public function run(Request $request)
     {
-        $user = $this->updateUserService->run($userId, $password, $name, $email);
+        $userData = [
+            'password'             => $request->password ? Hash::make($request->password) : null,
+            'name'                 => $request->name,
+            'email'                => $request->email,
+            'gender'               => $request->gender,
+            'birth'                => $request->birth,
+            'social_token'         => $request->token,
+            'social_expires_in'    => $request->expiresIn,
+            'social_refresh_token' => $request->refreshToken,
+            'social_token_secret'  => $request->tokenSecret,
+        ];
 
-        return $user;
+        // remove null values and their keys
+        $userData = array_filter($userData);
+
+        return $this->call(UpdateUserTask::class, [$userData, $request->id]);
     }
 }

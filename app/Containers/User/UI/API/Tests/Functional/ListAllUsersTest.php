@@ -3,8 +3,7 @@
 namespace App\Containers\User\UI\API\Tests\Functional;
 
 use App\Containers\User\Models\User;
-use App\Containers\Authorization\Models\Role;
-use App\Port\Tests\PHPUnit\Abstracts\TestCase;
+use App\Containers\User\Tests\TestCase;
 
 /**
  * Class ListAllUsersTest.
@@ -14,46 +13,72 @@ use App\Port\Tests\PHPUnit\Abstracts\TestCase;
 class ListAllUsersTest extends TestCase
 {
 
-    private $endpoint = '/users';
+    protected $endpoint = 'get@v1/users';
+
+    protected $access = [
+        'roles'       => 'admin',
+        'permissions' => 'list-users',
+    ];
 
     public function testListAllUsersByAdmin_()
     {
-        $user = $this->getLoggedInTestingUser();
-
-        // get the admin role
-        $adminRole = Role::where('name', 'admin')->first();
-
-        // make the user admin
-        $user->attachRole($adminRole);
-
-        // create some non-admin users
-        factory(User::class, 4)->create();
-
-        $endpoint = $this->endpoint;
+        // create some non-admin users who are clients
+        factory(User::class, 2)->create();
 
         // send the HTTP request
-        $response = $this->apiCall($endpoint, 'get');
+        $response = $this->makeCall();
 
         // assert response status is correct
-        $this->assertEquals($response->getStatusCode(), '200');
+        $response->assertStatus(200);
 
         // convert JSON response string to Object
-        $responseObject = $this->getResponseObject($response);
+        $responseContent = $this->getResponseContentObject();
 
         // assert the returned data size is correct
-        $this->assertCount(6, $responseObject->data); // 6 = 4 (fake in this test) + 1 (that is logged in) + 1 (seeded super admin)
+        $this->assertCount(4, $responseContent->data);
     }
 
     public function testListAllUsersByNonAdmin_()
     {
+        $this->getTestingUserWithoutAccess();
+
         // create some fake users
-        factory(User::class, 4)->create();
+        factory(User::class, 2)->create();
 
         // send the HTTP request
-        $response = $this->apiCall($this->endpoint, 'get');
+        $response = $this->makeCall();
 
         // assert response status is correct
-        $this->assertEquals($response->getStatusCode(), '403');
+        $response->assertStatus(403);
+
+        $this->assertResponseContainKeyValue([
+            'errors' => 'You have no access to this resource!',
+            'message' => 'This action is unauthorized.',
+        ]);
     }
+
+    public function testSearchUsersByName()
+    {
+        $user = $this->getTestingUser([
+            'name' => 'mahmoudzzz'
+        ]);
+
+        // 3 random users
+        factory(User::class, 3)->create();
+
+        // send the HTTP request
+        $response = $this->endpoint($this->endpoint. '?search=name:mahmoudzzz')->makeCall();
+
+        // assert response status is correct
+        $response->assertStatus(200);
+
+        $responseArray = $response->decodeResponseJson();
+
+        $this->assertEquals($user->name, $responseArray['data'][0]['name']);
+
+        // assert only single user was returned
+        $this->assertCount(1, $responseArray['data']);
+    }
+
 
 }

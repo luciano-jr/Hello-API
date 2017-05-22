@@ -2,9 +2,7 @@
 
 namespace App\Containers\User\UI\API\Requests;
 
-use Illuminate\Contracts\Auth\Access\Gate;
-use App\Containers\User\Models\User;
-use App\Port\Request\Abstracts\Request;
+use App\Ship\Parents\Requests\Request;
 
 /**
  * Class DeleteUserRequest.
@@ -15,41 +13,51 @@ class DeleteUserRequest extends Request
 {
 
     /**
-     * Get the validation rules that apply to the request.
+     * Define which Roles and/or Permissions has access to this request.
      *
-     * @return array
+     * @var  array
+     */
+    protected $access = [
+        'permissions' => 'delete-users',
+        'roles'       => '',
+    ];
+
+    /**
+     * Id's that needs decoding before applying the validation rules.
+     *
+     * @var  array
+     */
+    protected $decode = [
+        'id',
+    ];
+
+    /**
+     * Defining the URL parameters (`/stores/999/items`) allows applying
+     * validation rules on them and allows accessing them like request data.
+     *
+     * @var  array
+     */
+    protected $urlParameters = [
+        'id',
+    ];
+
+    /**
+     * @return  array
      */
     public function rules()
     {
         return [
-            'id'    => 'required|integer', // url parameter
+            'id' => 'required|exists:users,id',
         ];
     }
 
     /**
-     * Override the all() to automatically apply validation rules to the URL parameters
-     *
-     * @return  array
+     * @return  bool
      */
-    public function all()
+    public function authorize()
     {
-        $data = parent::all();
-        $data['id'] = $this->route('id');
-
-        return $data;
-    }
-
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @param \Illuminate\Contracts\Auth\Access\Gate $gate
-     *
-     * @return bool
-     */
-    public function authorize(Gate $gate)
-    {
-        // $this->user(): is the current logged in user, taken from the request
-        // $this->id: is the request input user ID (for the user that needs to be updated)
-        return $gate->getPolicyFor(User::class)->delete($this->user(), $this->id);
+        return $this->check([
+            'hasAccess|isOwner',
+        ]);
     }
 }

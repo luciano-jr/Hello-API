@@ -1,26 +1,16 @@
 <?php
 
-use App\Containers\Authorization\Database\Seeders\RolesAndPermissionsSeeder;
-use App\Containers\Settings\Database\Seeders\DefaultSystemSettingsSeeder;
-use App\Port\Seeder\Abstracts\Seeder;
+use App\Ship\Engine\Loaders\SeederLoaderTrait;
+use Illuminate\Database\Seeder as LaravelSeeder;
 
 /**
  * Class DatabaseSeeder
  *
  * @author  Mahmoud Zalt  <mahmoud@zalt.me>
  */
-class DatabaseSeeder extends Seeder
+class DatabaseSeeder extends LaravelSeeder
 {
-
-    /**
-     * The application Seeders that needs to be registered.
-     *
-     * @var array
-     */
-    protected $seeders = [
-        DefaultSystemSettingsSeeder::class,
-        RolesAndPermissionsSeeder::class,
-    ];
+    use SeederLoaderTrait;
 
     /**
      * Run the database seeds.
@@ -29,8 +19,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        foreach ($this->seeders as $seeder) {
-            $this->call($seeder);
-        }
+        $this->runLoadingSeeders();
     }
 }

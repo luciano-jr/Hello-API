@@ -2,14 +2,14 @@
 
 namespace App\Containers\Welcome\UI\WEB\Controllers;
 
-use App\Port\Controller\Abstracts\PortWebController;
+use App\Ship\Parents\Controllers\WebController;
 
 /**
  * Class Controller
  *
  * @author  Mahmoud Zalt  <mahmoud@zalt.me>
  */
-class Controller extends PortWebController
+class Controller extends WebController
 {
 
     /**
@@ -17,6 +17,8 @@ class Controller extends PortWebController
      */
     public function sayWelcome()
     {
-        return view('just-welcome');
+        // No actions to call. Since there's nothing to do but returning a response.
+
+        return view('welcome::welcome-page');
     }
 }

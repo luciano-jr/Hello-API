@@ -2,159 +2,139 @@
 
 namespace App\Containers\User\UI\API\Controllers;
 
-use App\Containers\ApiAuthentication\Actions\LoginAction;
-use App\Containers\ApiAuthentication\Actions\LogoutAction;
+use App\Containers\User\Actions\CreateAdminAction;
 use App\Containers\User\Actions\DeleteUserAction;
-use App\Containers\User\Actions\FindUserByAnythingAction;
+use App\Containers\User\Actions\GetAuthenticatedUserAction;
+use App\Containers\User\Actions\GetUserAction;
+use App\Containers\User\Actions\ListAdminsAction;
 use App\Containers\User\Actions\ListAndSearchUsersAction;
+use App\Containers\User\Actions\ListClientsAction;
 use App\Containers\User\Actions\RegisterUserAction;
 use App\Containers\User\Actions\UpdateUserAction;
-use App\Containers\User\Actions\UpdateVisitorUserAction;
+use App\Containers\User\UI\API\Requests\CreateAdminRequest;
 use App\Containers\User\UI\API\Requests\DeleteUserRequest;
-use App\Containers\User\UI\API\Requests\LoginRequest;
-use App\Containers\User\UI\API\Requests\RegisterRequest;
+use App\Containers\User\UI\API\Requests\GetAuthenticatedUserRequest;
+use App\Containers\User\UI\API\Requests\GetUserByIdRequest;
+use App\Containers\User\UI\API\Requests\ListAllUsersRequest;
+use App\Containers\User\UI\API\Requests\RegisterUserRequest;
 use App\Containers\User\UI\API\Requests\UpdateUserRequest;
-use App\Containers\User\UI\API\Requests\UpdateVisitorUserRequest;
 use App\Containers\User\UI\API\Transformers\UserTransformer;
-use App\Port\Controller\Abstracts\PortApiController;
-use App\Port\Request\Manager\HttpRequest;
-use Dingo\Api\Http\Request;
+use App\Ship\Parents\Controllers\ApiController;
 
 /**
  * Class Controller.
  *
  * @author Mahmoud Zalt <mahmoud@zalt.me>
  */
-class Controller extends PortApiController
+class Controller extends ApiController
 {
 
     /**
-     * @param \App\Containers\User\UI\API\Requests\DeleteUserRequest $request
-     * @param \App\Containers\User\Actions\DeleteUserAction          $action
+     * @param \App\Containers\User\UI\API\Requests\RegisterUserRequest $request
      *
-     * @return  \Dingo\Api\Http\Response
+     * @return  mixed
      */
-    public function deleteUser(DeleteUserRequest $request, DeleteUserAction $action)
+    public function registerUser(RegisterUserRequest $request)
     {
-        $action->run($request->id);
+        $user = $this->call(RegisterUserAction::class, [$request]);
 
-        return $this->response->accepted(null, [
-            'message' => 'User (' . $request->id . ') Deleted Successfully.',
-        ]);
+        return $this->transform($user, UserTransformer::class);
     }
 
     /**
-     * @param \App\Containers\User\Actions\ListAndSearchUsersAction $action
+     * @param \App\Containers\User\UI\API\Requests\CreateAdminRequest $request
      *
-     * @return  \Dingo\Api\Http\Response
+     * @return  mixed
      */
-    public function listAllUsers(ListAndSearchUsersAction $action)
+    public function createAdmin(CreateAdminRequest $request)
     {
-        $users = $action->run();
+        $admin = $this->call(CreateAdminAction::class, [$request]);
 
-        return $this->response->paginator($users, new UserTransformer());
-    }
-
-    /**
-     * @param \App\Containers\User\UI\API\Requests\LoginRequest     $request
-     * @param \App\Containers\ApiAuthentication\Actions\LoginAction $action
-     *
-     * @return  \Dingo\Api\Http\Response
-     */
-    public function loginUser(LoginRequest $request, LoginAction $action)
-    {
-        $user = $action->run($request['email'], $request['password']);
-
-        return $this->response->item($user, new UserTransformer());
-    }
-
-    /**
-     * @param \App\Port\Request\Manager\HttpRequest                  $request
-     * @param \App\Containers\ApiAuthentication\Actions\LogoutAction $action
-     *
-     * @return  \Dingo\Api\Http\Response
-     */
-    public function logoutUser(HttpRequest $request, LogoutAction $action)
-    {
-        $action->run($request->header('authorization'));
-
-        return $this->response->accepted(null, [
-            'message' => 'User Logged Out Successfully.',
-        ]);
-    }
-
-    /**
-     * @param \Dingo\Api\Http\Request                               $request
-     * @param \App\Containers\User\Actions\FindUserByAnythingAction $action
-     *
-     * @return  \Dingo\Api\Http\Response
-     */
-    public function refreshUser(Request $request, FindUserByAnythingAction $action)
-    {
-        $user = $action->run(
-            $request['user_id'],
-            $request->header('visitor-id'),
-            $request->header('Authorization')
-        );
-
-        return $this->response->item($user, new UserTransformer());
-    }
-
-    /**
-     * @param \App\Containers\User\UI\API\Requests\RegisterRequest $request
-     * @param \App\Containers\User\Actions\RegisterUserAction      $action
-     *
-     * @return  \Dingo\Api\Http\Response
-     */
-    public function registerUser(RegisterRequest $request, RegisterUserAction $action)
-    {
-        // create and login (true parameter) the new user
-        $user = $action->run(
-            $request['email'],
-            $request['password'],
-            $request['name'],
-            true
-        );
-
-        return $this->response->item($user, new UserTransformer());
-    }
-
-    /**
-     * The Visitor is the user that was previously created by an visitor ID (A.K.A Device ID).
-     * The Visitor user usually gets created automatically by a Middleware.
-     *
-     * @param \App\Containers\User\UI\API\Requests\UpdateVisitorUserRequest $request
-     * @param \App\Containers\User\Actions\UpdateVisitorUserAction          $action
-     *
-     * @return  \Dingo\Api\Http\Response
-     */
-    public function registerVisitorUser(UpdateVisitorUserRequest $request, UpdateVisitorUserAction $action)
-    {
-        $user = $action->run(
-            $request->header('Visitor-Id'),
-            $request['email'],
-            $request['password'],
-            $request['name']
-        );
-
-        return $this->response->item($user, new UserTransformer());
+        return $this->transform($admin, UserTransformer::class);
     }
 
     /**
      * @param \App\Containers\User\UI\API\Requests\UpdateUserRequest $request
-     * @param \App\Containers\User\Actions\UpdateUserAction          $action
      *
-     * @return  \Dingo\Api\Http\Response
+     * @return  mixed
      */
-    public function updateUser(UpdateUserRequest $request, UpdateUserAction $action)
+    public function updateUser(UpdateUserRequest $request)
     {
-        $user = $action->run(
-            $request->id,
-            $request['password'],
-            $request['name'],
-            $request['email']
-        );
+        $user = $this->call(UpdateUserAction::class, [$request]);
 
-        return $this->response->item($user, new UserTransformer());
+        return $this->transform($user, UserTransformer::class);
     }
+
+    /**
+     * @param \App\Containers\User\UI\API\Requests\DeleteUserRequest $request
+     *
+     * @return  \Illuminate\Http\JsonResponse
+     */
+    public function deleteUser(DeleteUserRequest $request)
+    {
+        $user = $this->call(DeleteUserAction::class, [$request]);
+
+        return $this->deleted($user);
+    }
+
+    /**
+     * @param \App\Containers\User\UI\API\Requests\ListAllUsersRequest $request
+     *
+     * @return  mixed
+     */
+    public function listAllUsers(ListAllUsersRequest $request)
+    {
+        $users = $this->call(ListAndSearchUsersAction::class);
+
+        return $this->transform($users, UserTransformer::class);
+    }
+
+    /**
+     * @param \App\Containers\User\UI\API\Requests\ListAllUsersRequest $request
+     *
+     * @return  mixed
+     */
+    public function listAllClients(ListAllUsersRequest $request)
+    {
+        $users = $this->call(ListClientsAction::class);
+
+        return $this->transform($users, UserTransformer::class);
+    }
+
+    /**
+     * @param \App\Containers\User\UI\API\Requests\ListAllUsersRequest $request
+     *
+     * @return  mixed
+     */
+    public function listAllAdmins(ListAllUsersRequest $request)
+    {
+        $users = $this->call(ListAdminsAction::class);
+
+        return $this->transform($users, UserTransformer::class);
+    }
+
+    /**
+     * @param \App\Containers\User\UI\API\Requests\GetUserByIdRequest $request
+     *
+     * @return  mixed
+     */
+    public function getUser(GetUserByIdRequest $request)
+    {
+        $user = $this->call(GetUserAction::class, [$request]);
+
+        return $this->transform($user, UserTransformer::class);
+    }
+
+    /**
+     * @param \App\Containers\User\UI\API\Requests\GetAuthenticatedUserRequest $request
+     *
+     * @return  mixed
+     */
+    public function getAuthenticatedUserData(GetAuthenticatedUserRequest $request)
+    {
+        $user = $this->call(GetAuthenticatedUserAction::class);
+
+        return $this->transform($user, UserTransformer::class);
+    }
+
 }

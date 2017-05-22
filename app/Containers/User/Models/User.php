@@ -2,37 +2,16 @@
 
 namespace App\Containers\User\Models;
 
-use App\Containers\ApiAuthentication\Services\TokenTrait;
-use App\Containers\Paypal\Models\PaypalAccount;
 use App\Containers\Stripe\Models\StripeAccount;
-use App\Containers\Tracker\Models\TimeTracker;
-use App\Port\Model\Abstracts\Model;
-use Illuminate\Auth\Authenticatable;
-use Illuminate\Auth\Passwords\CanResetPassword;
-use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
-use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
-use Zizaco\Entrust\Traits\EntrustUserTrait;
+use App\Ship\Parents\Models\UserModel;
 
 /**
  * Class User.
  *
  * @author Mahmoud Zalt <mahmoud@zalt.me>
  */
-class User extends Model implements
-    AuthenticatableContract,
-    CanResetPasswordContract
+class User extends UserModel
 {
-
-    use Authenticatable, CanResetPassword, TokenTrait, EntrustUserTrait;
-
-    // use SoftDeletes;
-
-    /**
-     * TODO:
-     * Temporary hiding the Illuminate\Database\Eloquent\SoftDeletes trait because
-     * of the collisions of the restore function with the EntrustUserTrait.
-     * Will be uncommented once a fix PR is merged in the repo (https://github.com/Zizaco/entrust/issues/428)
-     */
 
     /**
      * The database table used by the model.
@@ -50,10 +29,21 @@ class User extends Model implements
         'name',
         'email',
         'password',
-        'visitor_id',
         'device',
         'platform',
         'confirmed',
+        'gender',
+        'birth',
+        'social_provider',
+        'social_token',
+        'social_refresh_token',
+        'social_expires_in',
+        'social_token_secret',
+        'social_id',
+        'social_avatar',
+        'social_avatar_original',
+        'social_nickname',
+        'access_token',
     ];
 
     /**
@@ -75,29 +65,11 @@ class User extends Model implements
     protected $hidden = [
         'password',
         'remember_token',
-        'token',
     ];
 
-
-    /**
-     * @return  \Illuminate\Database\Eloquent\Relations\HasOne
-     */
     public function stripeAccount()
     {
         return $this->hasOne(StripeAccount::class);
-    }
-
-    /**
-     * @return  \Illuminate\Database\Eloquent\Relations\HasOne
-     */
-    public function paypalAccount()
-    {
-        return $this->hasOne(PaypalAccount::class);
-    }
-
-    public function timeTrackers()
-    {
-        return $this->hasMany(TimeTracker::class);
     }
 
 }

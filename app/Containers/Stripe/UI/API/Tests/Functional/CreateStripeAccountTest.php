@@ -2,7 +2,7 @@
 
 namespace App\Containers\Stripe\UI\API\Tests\Functional;
 
-use App\Port\Tests\PHPUnit\Abstracts\TestCase;
+use App\Containers\Stripe\Tests\TestCase;
 
 /**
  * Class CreateStripeAccountTest.
@@ -12,17 +12,22 @@ use App\Port\Tests\PHPUnit\Abstracts\TestCase;
 class CreateStripeAccountTest extends TestCase
 {
 
-    private $endpoint = '/stripes';
+    protected $endpoint = 'post@v1/stripes';
 
-    public function testCreateStripeAccount()
+    protected $access = [
+        'permissions' => '',
+        'roles'       => '',
+    ];
+
+    public function testCreateStripeAccount_()
     {
         $userDetails = [
-            'name' => 'Mahmoud Zalt',
-            'email' => 'mahmoud@testttt.test',
+            'name'     => 'Mahmoud Zalt',
+            'email'    => 'mahmoud@testttt.test',
             'password' => 'passssssssssss',
         ];
         // get the logged in user (create one if no one is logged in)
-        $user = $this->registerAndLoginTestingUser($userDetails);
+        $this->getTestingUser($userDetails);
 
         $data = [
             'customer_id'      => 'cus_123456789',
@@ -33,15 +38,15 @@ class CreateStripeAccountTest extends TestCase
         ];
 
         // send the HTTP request
-        $response = $this->apiCall($this->endpoint, 'post', $data, true);
+        $response = $this->makeCall($data);
 
         // assert response status is correct
-        $this->assertEquals($response->getStatusCode(), '202');
+        $response->assertStatus(202);
 
         // convert JSON response string to Object
-        $responseObject = $this->getResponseObject($response);
+        $responseContent = $this->getResponseContentObject();
 
-        $this->assertEquals($responseObject->message, 'Stripe account created successfully.');
+        $this->assertEquals($responseContent->message, 'Stripe account created successfully.');
 
     }
 

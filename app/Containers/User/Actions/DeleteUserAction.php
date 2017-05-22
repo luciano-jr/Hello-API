@@ -2,8 +2,11 @@
 
 namespace App\Containers\User\Actions;
 
-use App\Containers\User\Contracts\UserRepositoryInterface;
-use App\Port\Action\Abstracts\Action;
+use App\Containers\Authentication\Tasks\GetAuthenticatedUserTask;
+use App\Containers\User\Tasks\DeleteUserTask;
+use App\Containers\User\Tasks\FindUserByIdTask;
+use App\Ship\Parents\Actions\Action;
+use App\Ship\Parents\Requests\Request;
 
 /**
  * Class DeleteUserAction.
@@ -14,30 +17,20 @@ class DeleteUserAction extends Action
 {
 
     /**
-     * @var \App\Containers\User\Contracts\UserRepositoryInterface
-     */
-    private $userRepository;
-
-    /**
-     * UpdateUserAction constructor.
+     * @param \App\Ship\Parents\Requests\Request $request
      *
-     * @param \App\Containers\User\Contracts\UserRepositoryInterface $userRepository
+     * @return  mixed
      */
-    public function __construct(UserRepositoryInterface $userRepository)
+    public function run(Request $request)
     {
-        $this->userRepository = $userRepository;
-    }
+        if ($userId = $request->id) {
+            $user = $this->call(FindUserByIdTask::class, [$userId]);
+        } else {
+            $user = $this->call(GetAuthenticatedUserTask::class);
+        }
 
-    /**
-     * @param $userId
-     *
-     * @return bool
-     */
-    public function run($userId)
-    {
-        // delete the record from the users table.
-        $this->userRepository->delete($userId);
+        $this->call(DeleteUserTask::class, [$user]);
 
-        return true;
+        return $user;
     }
 }

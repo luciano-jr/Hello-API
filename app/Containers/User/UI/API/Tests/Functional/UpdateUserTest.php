@@ -2,7 +2,7 @@
 
 namespace App\Containers\User\UI\API\Tests\Functional;
 
-use App\Port\Tests\PHPUnit\Abstracts\TestCase;
+use App\Containers\User\Tests\TestCase;
 
 /**
  * Class UpdateUserTest.
@@ -12,76 +12,89 @@ use App\Port\Tests\PHPUnit\Abstracts\TestCase;
 class UpdateUserTest extends TestCase
 {
 
-    private $endpoint = '/users';
+    protected $endpoint = 'put@v1/users/{id}';
+
+    protected $access = [
+        'roles'       => '',
+        'permissions' => 'update-users',
+    ];
 
     public function testUpdateExistingUser_()
     {
-        $user = $this->getLoggedInTestingUser();
+        $user = $this->getTestingUser();
 
         $data = [
             'name'     => 'Updated Name',
             'password' => 'updated#Password',
         ];
 
-        $endpoint = $this->endpoint . '/' . $user->id;
-
         // send the HTTP request
-        $response = $this->apiCall($endpoint, 'put', $data);
+        $response = $this->injectId($user->id)->makeCall($data);
 
         // assert response status is correct
-        $this->assertEquals($response->getStatusCode(), '200');
+        $response->assertStatus(200);
 
         // assert returned user is the updated one
         $this->assertResponseContainKeyValue([
+            'object' => 'User',
             'email' => $user->email,
             'name'  => $data['name'],
-        ], $response);
+        ]);
 
         // assert data was updated in the database
-        $this->seeInDatabase('users', ['name' => $data['name']]);
+        $this->assertDatabaseHas('users', ['name' => $data['name']]);
+    }
+
+    public function testUpdateNonExistingUser_()
+    {
+        $data = [
+            'name' => 'Updated Name',
+        ];
+
+        $fakeUserId = 7777;
+
+        // send the HTTP request
+        $response = $this->injectId($fakeUserId)->makeCall($data);
+
+        // assert response status is correct
+        $response->assertStatus(400);
+
+        $this->assertResponseContainKeyValue([
+            'errors' => 'Oops something went wrong.'
+        ]);
+    }
+
+    public function testUpdateExistingUserWithoutData_()
+    {
+        // send the HTTP request
+        $response = $this->makeCall();
+
+        // assert response status is correct
+        $response->assertStatus(417);
+
+        $this->assertResponseContainKeyValue([
+            'message' => 'Inputs are empty.'
+        ]);
     }
 
     public function testUpdateExistingUserWithEmptyValues()
     {
-        $user = $this->getLoggedInTestingUser();
-
-        $data = []; // empty data
-
-        $endpoint = $this->endpoint . '/' . $user->id;
+        $data = [
+            'name'     => '',
+            'password' => '',
+        ];
 
         // send the HTTP request
-        $response = $this->apiCall($endpoint, 'put', $data);
+        $response = $this->makeCall($data);
 
         // assert response status is correct
-        $this->assertEquals($response->getStatusCode(), '417');
+        $response->assertStatus(422);
 
-        // assert message is correct
-        $this->assertResponseContainKeyValue([
-            'message' => 'Inputs are empty.',
-        ], $response);
+        $this->assertValidationErrorContain([
+            // messages should be updated after modifying the validation rules, to pass this test
+            'password' => 'The password must be at least 6 characters.',
+            'name' => 'The name must be at least 2 characters.',
+        ]);
+
     }
-
-    // TODO: after upgrading to Laravel 5.2 this function started returning 500 instead of 403
-    // it could be due to something in `app/Port/Exception/Handler/ExceptionsHandler.php` and the don't report thingy
-    // same problem as testDeleteDifferentUser
-
-//    public function testUpdateDifferentUser_()
-//    {
-//        $data = [
-//            'name'     => 'Updated Name',
-//            'password' => 'updated#Password',
-//        ];
-//
-//        $endpoint = $this->endpoint . '/' . 100; // amy ID
-//
-//        // send the HTTP request
-//        $response = $this->apiCall($endpoint, 'put', $data);
-//
-//        // assert response status is correct
-//        $this->assertEquals($response->getStatusCode(), '403');
-//
-//        // assert the message means (not allowed to proceed with the request)
-//        $this->assertEquals($response->getContent(), 'Forbidden');
-//    }
-
 }

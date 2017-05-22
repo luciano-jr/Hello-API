@@ -2,7 +2,8 @@
 
 namespace App\Containers\User\UI\API\Tests\Functional;
 
-use App\Port\Tests\PHPUnit\Abstracts\TestCase;
+use App\Containers\User\Models\User;
+use App\Containers\User\Tests\TestCase;
 
 /**
  * Class DeleteUserTest.
@@ -12,43 +13,40 @@ use App\Port\Tests\PHPUnit\Abstracts\TestCase;
 class DeleteUserTest extends TestCase
 {
 
-    private $endpoint = '/users';
+    protected $endpoint = 'delete@v1/users/{id}';
+
+    protected $access = [
+        'roles'       => '',
+        'permissions' => 'delete-users',
+    ];
 
     public function testDeleteExistingUser_()
     {
-        $user = $this->getLoggedInTestingUser();
-
-        $endpoint = $this->endpoint . '/' . $user->id;
+        $user = $this->getTestingUser();
 
         // send the HTTP request
-        $response = $this->apiCall($endpoint, 'delete');
+        $response = $this->injectId($user->id)->makeCall();
 
         // assert response status is correct
-        $this->assertEquals($response->getStatusCode(), '202');
+        $response->assertStatus(202);
 
         // assert the returned message is correct
         $this->assertResponseContainKeyValue([
-            'message' => 'User (' . $user->id . ') Deleted Successfully.',
-        ], $response);
+            'message' => 'User (' . $user->getHashedKey() . ') Deleted Successfully.',
+        ]);
     }
 
-    // TODO: after upgrading to Laravel 5.2 this function started returning 500 instead of 403
-    // it could be due to something in `app/Port/Exception/Handler/ExceptionsHandler.php` and the don't report thingy
-    // same problem as testUpdateDifferentUser_
+    public function testDeleteAnotherExistingUser_()
+    {
+        // make the call form the user token who has no access
+        $this->getTestingUserWithoutAccess();
 
-//    public function testDeleteDifferentUser()
-//    {
-//        $this->getLoggedInTestingUser();
-//
-//        $endpoint = $this->endpoint . '/' . 100; // any ID
-//
-//        // send the HTTP request
-//        $response = $this->apiCall($endpoint, 'delete');
-//
-//        // assert response status is correct
-//        $this->assertEquals($response->getStatusCode(), '403');
-//
-//        // assert user not allowed to proceed with the request
-//        $this->assertEquals($response->getContent(), 'Forbidden');
-//    }
+        $anotherUser = factory(User::class)->create();
+
+        // send the HTTP request
+        $response = $this->injectId($anotherUser->id)->makeCall();
+
+        // assert response status is correct
+        $response->assertStatus(403);
+    }
 }
